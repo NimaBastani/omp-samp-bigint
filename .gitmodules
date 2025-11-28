@@ -7,3 +7,6 @@
 [submodule "deps/pawn"]
 	path = deps/pawn
 	url = https://github.com/openmultiplayer/compiler
+[submodule "deps/samp-plugin-sdk"]
+	path = deps/samp-plugin-sdk
+	url = https://github.com/maddinat0r/samp-plugin-sdk

@@ -6,6 +6,79 @@
  *  The original code is copyright (c) 2025, AmyrAhmady.
  */
 
+#include "bigint_common.hpp"
+
+typedef void (*logprintf_t)(const char* format, ...);
+logprintf_t logprintf;
+
+#ifdef BUILD_SAMP_PLUGIN
+// SA:MP Plugin Mode
+#include "samp_plugin.h"
+#include <amx/amx.h>
+
+extern void *pAMXFunctions;
+
+PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports()
+{
+	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES;
+}
+
+PLUGIN_EXPORT bool PLUGIN_CALL Load(void** ppData)
+{
+	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];	
+	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
+	
+	if (!pAMXFunctions)
+	{
+		if (logprintf)
+			logprintf(" * bigint plugin: ERROR - Failed to get AMX function table!");
+		return false;
+	}
+	
+	if (logprintf)
+		logprintf(" * bigint plugin was loaded.");
+	return true;
+}
+
+PLUGIN_EXPORT void PLUGIN_CALL Unload()
+{
+}
+
+AMX_NATIVE_INFO natives[] =
+{
+	{ "BigInt_FromInt", BigIntNatives::FromInt },
+	{ "BigInt_ToInt", BigIntNatives::ToInt },
+	{ "BigInt_FromParts", BigIntNatives::FromParts },
+	{ "BigInt_GetParts", BigIntNatives::GetParts },
+	{ "BigInt_FromString", BigIntNatives::FromString },
+	{ "BigInt_ToString", BigIntNatives::ToString },
+	{ "BigInt_Add", BigIntNatives::Add },
+	{ "BigInt_Sub", BigIntNatives::Sub },
+	{ "BigInt_Mul", BigIntNatives::Mul },
+	{ "BigInt_Div", BigIntNatives::Div },
+	{ "BigInt_Mod", BigIntNatives::Mod },
+	{ "BigInt_AddInt", BigIntNatives::AddInt },
+	{ "BigInt_SubInt", BigIntNatives::SubInt },
+	{ "BigInt_MulInt", BigIntNatives::MulInt },
+	{ "BigInt_DivInt", BigIntNatives::DivInt },
+	{ "BigInt_ModInt", BigIntNatives::ModInt },
+	{ "BigInt_Cmp", BigIntNatives::Cmp },
+	{ "BigInt_CmpInt", BigIntNatives::CmpInt },
+	{ 0, 0 }
+};
+
+PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX* amx)
+{
+	return amx_Register(amx, natives, -1);
+}
+
+PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX* amx)
+{
+	return AMX_ERR_NONE;
+}
+
+#else
+// open.mp Component Mode
 #include <sdk.hpp>
 #include <Server/Components/Pawn/pawn.hpp>
 #include <Server/Components/Pawn/Impl/pawn_natives.hpp>
@@ -95,43 +168,7 @@ COMPONENT_ENTRY_POINT()
 	return new OmpBigInt();
 }
 
-static inline cell* GetBigIntPtr(AMX* amx, cell param)
-{
-	cell* addr = nullptr;
-	amx_GetAddr(amx, param, &addr);
-	return addr;
-}
-
-static inline int64_t BigInt_Read(const cell* p)
-{
-	uint32_t lo = static_cast<uint32_t>(p[0]);
-	int32_t hi = static_cast<int32_t>(p[1]);
-	return (static_cast<int64_t>(hi) << 32) | lo;
-}
-
-static inline void BigInt_Write(cell* p, int64_t v)
-{
-	uint32_t lo = static_cast<uint32_t>(v & 0xFFFFFFFFLL);
-	int32_t hi = static_cast<int32_t>(v >> 32);
-	p[0] = static_cast<cell>(lo);
-	p[1] = static_cast<cell>(hi);
-}
-
-static inline uint64_t BigInt_ReadU(const cell* p)
-{
-	uint32_t lo = static_cast<uint32_t>(p[0]);
-	uint32_t hi = static_cast<uint32_t>(p[1]);
-	return (static_cast<uint64_t>(hi) << 32) | lo;
-}
-
-static inline void BigInt_WriteU(cell* p, uint64_t v)
-{
-	uint32_t lo = static_cast<uint32_t>(v & 0xFFFFFFFFULL);
-	uint32_t hi = static_cast<uint32_t>(v >> 32);
-	p[0] = static_cast<cell>(lo);
-	p[1] = static_cast<cell>(hi);
-}
-
+// open.mp native wrappers using SCRIPT_API
 // BigInt_FromInt(BigInt:value[], v);
 SCRIPT_API(BigInt_FromInt, bool(cell bigIntAddr, int value))
 {
@@ -370,3 +407,5 @@ SCRIPT_API(BigInt_CmpInt, int(cell bigIntAddr, int value))
 	}
 	return 0;
 }
+
+#endif
