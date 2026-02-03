@@ -4,6 +4,7 @@ A lightweight component/plugin that adds signed 64-bit integer support to Pawn s
 
 > **Note:** SA:MP plugin support was added by [NimaBastani](https://github.com/NimaBastani).
 
+> **Original code:** [AmyrAhmady's repository](https://github.com/AmyrAhmady/omp-bigint).
 ## Building
 
 ### Prerequisites
